@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persons Table Display</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for better aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* Ensure table is responsive and centered */
+        .table-container {
+            width: 100%;
+            max-width: 1200px; /* Max width for larger screens */
+            background-color: #ffffff;
+            border-radius: 12px; /* Rounded corners for the container */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            overflow-x: auto; /* Enable horizontal scrolling on small screens */
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate; /* Allows border-radius on cells */
+            border-spacing: 0;
+        }
+        th, td {
+            padding: 16px; /* Ample padding for readability */
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0; /* Light gray border for rows */
+        }
+        th {
+            background-color: #4f46e5; /* Primary color for header */
+            color: white;
+            font-weight: 600; /* Semi-bold font */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.875rem; /* Smaller font size for headers */
+        }
+        /* Apply rounded corners to the first and last header cells */
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+        /* Apply rounded corners to the first and last data cells of the last row */
+        tr:last-child td:first-child {
+            border-bottom-left-radius: 8px;
+        }
+        tr:last-child td:last-child {
+            border-bottom-right-radius: 8px;
+        }
+        tbody tr:hover {
+            background-color: #eff6ff; /* Light blue on hover */
+        }
+        .uuid-cell {
+            font-family: 'monospace'; /* Monospace font for UUIDs */
+            font-size: 0.8rem;
+            color: #6b7280; /* Gray color */
+        }
+        .numeric-cell {
+            text-align: right; /* Right align numeric values */
+        }
+        .code-cell {
+            font-family: 'monospace';
+            font-weight: 500;
+            color: #10b981; /* Green for reference code */
+        }
+        .timestamp-cell {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .loading-message, .error-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1rem;
+            color: #4f46e5;
+        }
+        .error-message {
+            color: #ef4444; /* Red for error */
+        }
+    </style>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="table-container">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persons Data</h2>
+        <div id="loading" class="loading-message">Loading data...</div>
+        <div id="error" class="error-message hidden"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th class="numeric-cell">Ticket Price</th>
+                    <th class="numeric-cell">Quantity</th>
+                    <th>Reference Code</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody id="persons-table-body">
+                <!-- Data will be dynamically loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+  <script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+       const supabaseUrl = 'https://sacjuubsiixwnazxjtpp.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhY2p1dWJzaWl4d25henhqdHBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MjQ2MDEsImV4cCI6MjA2ODIwMDYwMX0.U9TJeh25-3eEwr2y5rSmj4Kh37HXJZdWgXeqEqPTzmo';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const personsTableBody = document.getElementById('persons-table-body');
+        const loadingMessage = document.getElementById('loading');
+        const errorMessage = document.getElementById('error');
+
+        async function fetchPersons() {
+            loadingMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            personsTableBody.innerHTML = ''; // Clear existing data
+
+            try {
+                const { data, error } = await supabase
+                    .from('persons')
+                    .select('*')
+                    .order('created_at', { ascending: false }); // Order by creation date, newest first
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data.length === 0) {
+                    personsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">No data found.</td></tr>`;
+                } else {
+                    data.forEach(person => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="uuid-cell">${person.id}</td>
+                            <td>${person.name}</td>
+                            <td class="numeric-cell">${parseFloat(person.ticket_price).toFixed(2)}</td>
+                            <td class="numeric-cell">${person.quantity}</td>
+                            <td class="code-cell">${person.reference_code}</td>
+                            <td class="timestamp-cell">${new Date(person.created_at).toLocaleString()}</td>
+                        `;
+                        personsTableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching persons:', error.message);
+                errorMessage.textContent = `Failed to load data: ${error.message}. Please check your Supabase configuration and network connection.`;
+                errorMessage.classList.remove('hidden');
+                personsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Error loading data.</td></tr>`;
+            } finally {
+                loadingMessage.classList.add('hidden');
+            }
+        }
+
+        // Fetch data when the page loads
+        document.addEventListener('DOMContentLoaded', fetchPersons);
+    </script>
+</body>
+</html>

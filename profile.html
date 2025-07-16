@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url('logo.png') no-repeat center center fixed;
+      background-size: 300px 300px;
+      background-color: #0f172a;
+      color: #f1f5f9;
+      backdrop-filter: blur(4px);
+    }
+
+    .navbar {
+      background-color: #1e293b;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .navbar a, .navbar button {
+      color: #f9fafb;
+      text-decoration: none;
+      padding: 11px 20px;
+      margin: 0 10px;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      font-weight: 500;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      width: 88px;
+    }
+
+    .navbar a:hover, .navbar button:hover {
+      background-color: #3b82f6;
+      transform: scale(1.05);
+    }
+
+    .home-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 17px;
+      max-width: 1200px;
+      margin: 20px auto;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(6px);
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .left, .right, .center {
+      flex: 1;
+      min-width: 300px;
+      background-color: rgba(248, 250, 252, 0.1);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #e0f2fe;
+    }
+
+    input {
+      width: 93%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      border: 1px solid #94a3b8;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #f1f5f9;
+      font-size: 1em;
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+      transform: scale(1.03);
+    }
+
+    .add-person {
+      margin-top: 10px;
+      display: inline-block;
+      font-weight: 500;
+      color: #3b82f6;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .add-person:hover {
+      text-decoration: underline;
+      transform: scale(1.03);
+    }
+
+    @media (max-width: 768px) {
+      .home-container {
+        flex-direction: column;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="navbar">
+  <a href="index.html">Home</a>
+  <a href="groups.html">Groups</a>
+  <a href="School.html">School</a>
+  <a href="person.html">Persons</a>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="home-container">
+  <div class="left">
+    <h2>Group Input</h2>
+    <input type="text" id="groupName" placeholder="Group Name">
+    <div id="groupPeopleContainer">
+      <div class="group-person-entry">
+        <input type="text" class="personName" placeholder="Name">
+        <input type="number" class="ticketPrice" placeholder="Ticket Price">
+        <input type="number" class="ticketQty" placeholder="Quantity">
+      </div>
+    </div>
+    <span class="add-person" onclick="addPersonField('groupPeopleContainer')">+ Add Person</span>
+    <button onclick="saveGroup()">Save Group</button>
+  </div>
+
+  <div class="right">
+    <h2>School Input</h2>
+    <input type="text" id="schoolName" placeholder="School Name">
+    <div id="schoolPeopleContainer">
+      <div class="group-person-entry">
+        <input type="text" class="personName" placeholder="Name">
+        <input type="number" class="ticketPrice" placeholder="Ticket Price">
+        <input type="number" class="ticketQty" placeholder="Quantity">
+      </div>
+    </div>
+    <span class="add-person" onclick="addPersonField('schoolPeopleContainer')">+ Add Person</span>
+    <button onclick="alert('School saving not yet implemented.')">Save School</button>
+  </div>
+
+  <div class="center">
+    <h2>Person Input</h2>
+    <input type="text" id="personName" placeholder="Name">
+    <input type="number" id="personTicketPrice" placeholder="Ticket Price">
+    <input type="number" id="personTicketQty" placeholder="Ticket Qty">
+    <button onclick="savePerson()">Save Person</button>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+   const supabaseUrl = 'https://sacjuubsiixwnazxjtpp.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhY2p1dWJzaWl4d25henhqdHBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MjQ2MDEsImV4cCI6MjA2ODIwMDYwMX0.U9TJeh25-3eEwr2y5rSmj4Kh37HXJZdWgXeqEqPTzmo';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  function generateReferenceCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  window.addPersonField = function(containerId) {
+    const container = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.classList.add('group-person-entry');
+    div.innerHTML = `
+      <input type="text" class="personName" placeholder="Name">
+      <input type="number" class="ticketPrice" placeholder="Ticket Price">
+      <input type="number" class="ticketQty" placeholder="Quantity">
+    `;
+    container.appendChild(div);
+  };
+
+  window.saveGroup = async function () {
+    const groupName = document.getElementById('groupName').value.trim();
+    const peopleInputs = document.querySelectorAll('#groupPeopleContainer .group-person-entry');
+    const people = [];
+
+    peopleInputs.forEach(entry => {
+      const name = entry.querySelector('.personName').value.trim();
+      const ticketPrice = parseFloat(entry.querySelector('.ticketPrice').value);
+      const qty = parseInt(entry.querySelector('.ticketQty').value);
+      if (name && !isNaN(ticketPrice) && !isNaN(qty)) {
+        people.push({ name, ticketPrice, qty });
+      }
+    });
+
+    if (!groupName || people.length === 0) {
+      alert("Please enter valid group and person details.");
+      return;
+    }
+
+    const referenceCode = generateReferenceCode();
+    const { data: groupData, error: groupError } = await supabase
+      .from('groups')
+      .insert([{ name: groupName, reference_code: referenceCode }])
+      .select()
+      .single();
+
+    if (groupError) {
+      alert("Error saving group: " + groupError.message);
+      return;
+    }
+
+    for (const person of people) {
+      const { error: personError } = await supabase.from('group_members').insert([{
+        group_id: groupData.id,
+        name: person.name,
+        ticket_price: person.ticketPrice,
+        quantity: person.qty,
+        reference_code: generateReferenceCode()
+      }]);
+
+      if (personError) {
+        alert("Error saving person: " + personError.message);
+        return;
+      }
+    }
+
+    alert("Group and members saved!");
+    window.location.href = "groups.html";
+  };
+
+  window.savePerson = async function () {
+    const name = document.getElementById('personName').value.trim();
+    const ticketPrice = parseFloat(document.getElementById('personTicketPrice').value);
+    const qty = parseInt(document.getElementById('personTicketQty').value);
+
+    if (!name || isNaN(ticketPrice) || isNaN(qty)) {
+      alert("Please enter valid person details.");
+      return;
+    }
+
+    const { error } = await supabase.from('persons').insert([{
+      name,
+      ticket_price: ticketPrice,
+      quantity: qty,
+      reference_code: generateReferenceCode()
+    }]);
+
+    if (error) {
+      alert("Error saving person: " + error.message);
+      return;
+    }
+
+    alert("Person saved!");
+    window.location.href = "person.html";
+  };
+
+  window.logout = function () {
+    window.location.href = "login.html";
+  };
+</script>
+
+</body>
+</html>

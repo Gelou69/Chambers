@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groups and Members Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .table-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #10b981;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.875rem;
+        }
+        th:first-child { border-top-left-radius: 8px; }
+        th:last-child { border-top-right-radius: 8px; }
+        tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+        tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+        tbody tr:hover {
+            background-color: #ecfdf5;
+        }
+        .uuid-cell {
+            font-family: 'monospace';
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        .code-cell {
+            font-family: 'monospace';
+            font-weight: 500;
+            color: #4f46e5;
+        }
+        .timestamp-cell {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .loading-message, .error-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1rem;
+            color: #10b981;
+        }
+        .error-message {
+            color: #ef4444;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 900px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-button {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            z-index: 1001;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            padding-right: 40px;
+        }
+        .group-members-table-modal {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 15px;
+        }
+        .group-members-table-modal th,
+        .group-members-table-modal td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .group-members-table-modal th {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+        .group-members-table-modal th:first-child { border-top-left-radius: 8px; }
+        .group-members-table-modal th:last-child { border-top-right-radius: 8px; }
+        .group-members-table-modal tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+        .group-members-table-modal tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+        .group-members-table-modal tbody tr:hover {
+            background-color: #e0e7ff;
+        }
+        .numeric-cell {
+            text-align: right;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .action-buttons button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px; /* Space between icon and text if text exists */
+        }
+        .action-buttons button i {
+            font-size: 1rem; /* Adjust icon size */
+        }
+        .edit-button {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+        }
+        .edit-button:hover {
+            background-color: #2563eb;
+        }
+        .delete-button {
+            background-color: #ef4444; /* Red */
+            color: white;
+        }
+        .delete-button:hover {
+            background-color: #dc2626;
+        }
+        .add-button {
+            background-color: #10b981; /* Green */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .add-button:hover {
+            background-color: #059669;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-buttons .cancel-button {
+            background-color: #cbd5e1;
+            color: #333;
+        }
+        .modal-buttons .cancel-button:hover {
+            background-color: #94a3b8;
+        }
+        .modal-buttons .save-button {
+            background-color: #10b981;
+            color: white;
+        }
+        .modal-buttons .save-button:hover {
+            background-color: #059669;
+        }
+        .modal-action-buttons-container {
+            display: flex;
+            justify-content: space-between; /* Distributes items with space between them */
+            align-items: center; /* Aligns items vertically in the middle */
+            margin-bottom: 20px;
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="table-container">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Groups Data</h2>
+        <button id="addGroupButton" class="add-button">Add New Group</button>
+        <div id="loading-groups" class="loading-message">Loading groups...</div>
+        <div id="error-groups" class="error-message hidden"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Reference Code</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="groups-table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="groupMembersModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeGroupMembersModal()">&times;</span>
+            <h3 id="modalTitle" class="modal-title">Group Members in Group: </h3>
+            <div class="modal-action-buttons-container">
+                <div></div> <button id="addPaymentTicketButton" class="add-button">Add Payment and Ticket</button>
+            </div>
+
+            <div id="loading-group-members" class="loading-message">Loading group members...</div>
+            <div id="error-group-members" class="error-message hidden"></div>
+            <table class="group-members-table-modal">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Ticket Type</th>
+                        <th class="numeric-cell">Ticket Price</th>
+                        <th class="numeric-cell">Quantity</th>
+                        <th class="numeric-cell">Total Payment</th>
+                        <th>Reference Code</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="group-members-modal-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="groupFormModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeGroupFormModal()">&times;</span>
+            <h3 id="groupFormModalTitle" class="modal-title">Add/Edit Group</h3>
+            <form id="groupForm">
+                <input type="hidden" id="groupId">
+                <div class="form-group">
+                    <label for="groupName">Group Name</label>
+                    <input type="text" id="groupName" required>
+                </div>
+                <div class="form-group">
+                    <label for="groupReferenceCode">Reference Code</label>
+                    <input type="text" id="groupReferenceCode">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-button" onclick="closeGroupFormModal()">Cancel</button>
+                    <button type="submit" class="save-button">Save Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="memberFormModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeMemberFormModal()">&times;</span>
+            <h3 id="memberFormModalTitle" class="modal-title">Add/Edit Member</h3>
+            <form id="memberForm">
+                <input type="hidden" id="memberId">
+                <input type="hidden" id="memberGroupId">
+                <div class="form-group">
+                    <label for="memberName">Member Name</label>
+                    <input type="text" id="memberName" required>
+                </div>
+                <div class="form-group">
+                    <label for="memberTicketType">Ticket Type</label>
+                    <select id="memberTicketType" required>
+                        <option value="">Select a Ticket Type</option>
+                        <option value="Regular">Regular</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Student">Student</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="memberTicketPrice">Ticket Price</label>
+                    <input type="number" id="memberTicketPrice" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="memberQuantity">Quantity</label>
+                    <input type="number" id="memberQuantity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="memberReferenceCode">Reference Code</label>
+                    <input type="text" id="memberReferenceCode">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-button" onclick="closeMemberFormModal()">Cancel</button>
+                    <button type="submit" class="save-button">Save Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        const supabaseUrl = 'https://sacjuubsiixwnazxjtpp.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhY2p1dWJzaWl4d25henhqdHBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MjQ2MDEsImV4cCI6MjA2ODIwMDYwMX0.U9TJeh25-3eEwr2y5rSmj4Kh37HXJZdWgXeqEqPTzmo';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+
+        // --- DOM Elements for Groups ---
+        const groupsTableBody = document.getElementById('groups-table-body');
+        const loadingGroups = document.getElementById('loading-groups');
+        const errorGroups = document.getElementById('error-groups');
+        const addGroupButton = document.getElementById('addGroupButton');
+
+        // --- DOM Elements for Group Members Modal ---
+        const groupMembersModal = document.getElementById('groupMembersModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const groupMembersModalBody = document.getElementById('group-members-modal-body');
+        const loadingGroupMembers = document.getElementById('loading-group-members');
+        const errorGroupMembers = document.getElementById('error-group-members');
+        // const addMemberButton = document.getElementById('addMemberButton'); // Original button - now replaced/aliased
+        const addPaymentTicketButton = document.getElementById('addPaymentTicketButton'); // New button
+
+        let currentGroupId = null; // To keep track of the currently viewed group's ID
+
+        // --- DOM Elements for Group Form Modal (Add/Edit Group) ---
+        const groupFormModal = document.getElementById('groupFormModal');
+        const groupFormModalTitle = document.getElementById('groupFormModalTitle');
+        const groupForm = document.getElementById('groupForm');
+        const groupIdInput = document.getElementById('groupId');
+        const groupNameInput = document.getElementById('groupName');
+        const groupReferenceCodeInput = document.getElementById('groupReferenceCode');
+
+        // --- DOM Elements for Member Form Modal (Add/Edit Member) ---
+        const memberFormModal = document.getElementById('memberFormModal');
+        const memberFormModalTitle = document.getElementById('memberFormModalTitle');
+        const memberForm = document.getElementById('memberForm');
+        const memberIdInput = document.getElementById('memberId');
+        const memberGroupIdInput = document.getElementById('memberGroupId'); // Hidden input to store group_id
+        const memberNameInput = document.getElementById('memberName');
+        const memberTicketTypeInput = document.getElementById('memberTicketType');
+        const memberTicketPriceInput = document.getElementById('memberTicketPrice');
+        const memberQuantityInput = document.getElementById('memberQuantity');
+        const memberReferenceCodeInput = document.getElementById('memberReferenceCode');
+
+        // --- Utility Functions ---
+
+        /** Shows a loading message element. */
+        function showLoading(element) {
+            element.classList.remove('hidden');
+        }
+
+        /** Hides a loading message element. */
+        function hideLoading(element) {
+            element.classList.add('hidden');
+        }
+
+        /** Displays an error message in the specified element. */
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        /** Hides an error message element. */
+        function hideError(element) {
+            element.classList.add('hidden');
+        }
+
+        // --- Group Management Functions ---
+
+        /** Fetches all groups from Supabase and displays them in the main table. */
+        async function fetchGroups() {
+            showLoading(loadingGroups);
+            hideError(errorGroups);
+            groupsTableBody.innerHTML = ''; // Clear existing data
+
+            try {
+                const { data, error } = await supabase
+                    .from('groups')
+                    .select('*')
+                    .order('created_at', { ascending: false }); // Order by creation date, newest first
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    groupsTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">No groups found. Click "Add New Group" to create one.</td></tr>`;
+                } else {
+                    data.forEach(group => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="uuid-cell">${group.id}</td>
+                            <td>${group.name}</td>
+                            <td class="code-cell">${group.reference_code || 'N/A'}</td>
+                            <td class="timestamp-cell">${new Date(group.created_at).toLocaleString()}</td>
+                            <td class="action-buttons">
+                                <button class="edit-button" data-id="${group.id}" title="Edit Group">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="delete-button" data-id="${group.id}" data-name="${group.name}" title="Delete Group">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                        // Add click event listeners to non-action cells to view members
+                        row.querySelectorAll('td:not(.action-buttons)').forEach(cell => {
+                            cell.addEventListener('click', () => showGroupMembersInGroup(group.id, group.name));
+                        });
+
+                        // Add specific event listeners for Edit and Delete buttons
+                        row.querySelector('.edit-button').addEventListener('click', (e) => {
+                            e.stopPropagation(); // Prevent row click from firing
+                            openGroupFormModalForEdit(group);
+                        });
+                        row.querySelector('.delete-button').addEventListener('click', (e) => {
+                            e.stopPropagation(); // Prevent row click from firing
+                            deleteGroup(group.id, group.name);
+                        });
+
+                        groupsTableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching groups:', error.message);
+                showError(errorGroups, `Failed to load groups: ${error.message}. Please check your Supabase configuration and RLS policies.`);
+                groupsTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading groups.</td></tr>`;
+            } finally {
+                hideLoading(loadingGroups);
+            }
+        }
+
+        // Event listener for opening the Add Group modal
+        addGroupButton.addEventListener('click', () => {
+            groupFormModalTitle.textContent = 'Add New Group';
+            groupForm.reset(); // Clear form fields
+            groupIdInput.value = ''; // Ensure no ID is set for new group
+            groupFormModal.classList.remove('hidden'); // Show the modal
+        });
+
+        /** Opens the Group Form Modal pre-filled for editing an existing group. */
+        function openGroupFormModalForEdit(group) {
+            groupFormModalTitle.textContent = 'Edit Group';
+            groupIdInput.value = group.id;
+            groupNameInput.value = group.name;
+            groupReferenceCodeInput.value = group.reference_code || '';
+            groupFormModal.classList.remove('hidden');
+        }
+
+        /** Closes the Group Form Modal. */
+        function closeGroupFormModal() {
+            groupFormModal.classList.add('hidden');
+        }
+
+        // Handle Group Form Submission (Add or Edit)
+        groupForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+            const id = groupIdInput.value;
+            const name = groupNameInput.value;
+            const reference_code = groupReferenceCodeInput.value || null; // Use null if empty string
+
+            try {
+                if (id) {
+                    // Update existing group
+                    const { error } = await supabase
+                        .from('groups')
+                        .update({ name, reference_code })
+                        .eq('id', id);
+                    if (error) throw error;
+                    alert('Group updated successfully!');
+                } else {
+                    // Add new group
+                    const { error } = await supabase
+                        .from('groups')
+                        .insert({ name, reference_code }); // Assuming `id` and `created_at` are auto-generated
+                    if (error) throw error;
+                    alert('Group added successfully!');
+                }
+                closeGroupFormModal();
+                fetchGroups(); // Refresh the groups table to show changes
+            } catch (error) {
+                console.error('Error saving group:', error.message);
+                alert(`Error saving group: ${error.message}`);
+            }
+        });
+
+        /** Deletes a group and all its associated members. */
+        async function deleteGroup(id, name) {
+            if (!confirm(`Are you sure you want to delete the group "${name}"? This will also delete all associated members.`)) {
+                return; // User cancelled
+            }
+
+            try {
+                // Supabase allows cascading deletes if configured in your database relationships,
+                // but explicitly deleting members first is safer if no cascade is set or for clarity.
+                // If you have ON DELETE CASCADE set up in your `group_members` foreign key,
+                // you can skip the member deletion step.
+                const { error: memberError } = await supabase
+                    .from('group_members')
+                    .delete()
+                    .eq('group_id', id);
+
+                if (memberError) {
+                    // Log the error but don't stop, as group delete might still work
+                    // if member deletion failed for an unrelated reason (e.g., RLS issue on members)
+                    console.warn(`Warning: Could not delete all members for group ${name}. Error: ${memberError.message}`);
+                }
+
+                const { error: groupError } = await supabase
+                    .from('groups')
+                    .delete()
+                    .eq('id', id);
+
+                if (groupError) throw groupError;
+
+                alert('Group and its members deleted successfully!');
+                fetchGroups(); // Refresh the groups table
+            } catch (error) {
+                console.error('Error deleting group:', error.message);
+                alert(`Error deleting group: ${error.message}`);
+            }
+        }
+
+        // --- Group Member Management Functions ---
+
+        /** Fetches and displays group members for a given group ID in the modal. */
+        async function showGroupMembersInGroup(groupId, groupName) {
+            currentGroupId = groupId; // Store the ID of the group currently being viewed
+            groupMembersModal.classList.remove('hidden'); // Show the modal
+            modalTitle.textContent = `Group Members in Group: ${groupName}`; // Set modal title
+            showLoading(loadingGroupMembers);
+            hideError(errorGroupMembers);
+            groupMembersModalBody.innerHTML = ''; // Clear existing members data
+
+            try {
+                const { data, error } = await supabase
+                    .from('group_members')
+                    .select('*')
+                    .eq('group_id', groupId) // Filter members by the current group ID
+                    .order('name', { ascending: true }); // Order members by name
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    groupMembersModalBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">No members found in this group. Click "Add Payment and Ticket" to add one.</td></tr>`;
+                } else {
+                    data.forEach(member => {
+                        // Calculate total payment on the fly
+                        const totalPayment = (parseFloat(member.ticket_price) * parseInt(member.quantity)).toFixed(2);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="uuid-cell">${member.id}</td>
+                            <td>${member.name}</td>
+                            <td>${member.ticket_type || 'N/A'}</td>
+                            <td class="numeric-cell">${parseFloat(member.ticket_price).toFixed(2)}</td>
+                            <td class="numeric-cell">${member.quantity}</td>
+                            <td class="numeric-cell font-bold text-green-700">$${totalPayment}</td>
+                            <td class="code-cell">${member.reference_code || 'N/A'}</td>
+                            <td class="action-buttons">
+                                <button class="edit-button" data-id="${member.id}" title="Edit Member">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="delete-button" data-id="${member.id}" data-name="${member.name}" title="Delete Member">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                        // Add event listeners for Edit and Delete buttons for members
+                        row.querySelector('.edit-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openMemberFormModalForEdit(member);
+                        });
+                        row.querySelector('.delete-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteMember(member.id, member.name);
+                        });
+                        groupMembersModalBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching group members:', error.message);
+                showError(errorGroupMembers, `Failed to load group members: ${error.message}.`);
+                groupMembersModalBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-red-500">Error loading group members.</td></tr>`;
+            } finally {
+                hideLoading(loadingGroupMembers);
+            }
+        }
+
+        /** Closes the Group Members Modal. */
+        function closeGroupMembersModal() {
+            groupMembersModal.classList.add('hidden');
+            currentGroupId = null; // Clear the current group ID when closing
+        }
+
+        // Event listener for opening the "Add Payment and Ticket" modal
+        addPaymentTicketButton.addEventListener('click', () => {
+            if (!currentGroupId) {
+                alert('Please select a group first to add a member with payment and ticket details.');
+                return;
+            }
+            memberFormModalTitle.textContent = 'Add New Member (Payment & Ticket)';
+            memberForm.reset(); // Clear form fields
+            memberNameInput.value = ''; // Ensure member name is clear for new entry
+            memberIdInput.value = ''; // Ensure no ID is set for new member
+            memberGroupIdInput.value = currentGroupId; // Automatically set the group ID
+            memberFormModal.classList.remove('hidden'); // Show the modal
+        });
+
+        /** Opens the Member Form Modal pre-filled for editing an existing member. */
+        function openMemberFormModalForEdit(member) {
+            memberFormModalTitle.textContent = 'Edit Member';
+            memberIdInput.value = member.id;
+            memberGroupIdInput.value = member.group_id;
+            memberNameInput.value = member.name;
+            memberTicketTypeInput.value = member.ticket_type || '';
+            memberTicketPriceInput.value = member.ticket_price;
+            memberQuantityInput.value = member.quantity;
+            memberReferenceCodeInput.value = member.reference_code || '';
+            memberFormModal.classList.remove('hidden');
+        }
+
+        /** Closes the Member Form Modal. */
+        function closeMemberFormModal() {
+            memberFormModal.classList.add('hidden');
+        }
+
+        // Handle Member Form Submission (Add or Edit)
+        memberForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = memberIdInput.value;
+            const group_id = memberGroupIdInput.value;
+            const name = memberNameInput.value;
+            const ticket_type = memberTicketTypeInput.value;
+            const ticket_price = parseFloat(memberTicketPriceInput.value);
+            const quantity = parseInt(memberQuantityInput.value);
+            const reference_code = memberReferenceCodeInput.value || null;
+
+            if (isNaN(ticket_price) || ticket_price < 0) {
+                alert('Please enter a valid ticket price (a non-negative number).');
+                return;
+            }
+            if (isNaN(quantity) || quantity < 1) {
+                alert('Please enter a valid quantity (minimum 1).');
+                return;
+            }
+            if (!ticket_type) {
+                alert('Please select a ticket type.');
+                return;
+            }
+            if (!name.trim()) { // Check if name is empty or just whitespace
+                alert('Please enter a member name.');
+                return;
+            }
+
+            try {
+                if (id) {
+                    // Update existing member
+                    const { error } = await supabase
+                        .from('group_members')
+                        .update({ name, ticket_type, ticket_price, quantity, reference_code })
+                        .eq('id', id);
+                    if (error) throw error;
+                    alert('Member updated successfully!');
+                } else {
+                    // Add new member
+                    const { error } = await supabase
+                        .from('group_members')
+                        .insert({ group_id, name, ticket_type, ticket_price, quantity, reference_code });
+                    if (error) throw error;
+                    alert('Member added successfully!');
+                }
+                closeMemberFormModal();
+                // Re-fetch members for the current group to update the modal view
+                if (group_id && modalTitle.textContent) {
+                    const groupNameMatch = modalTitle.textContent.match(/Group Members in Group: (.+)/);
+                    if (groupNameMatch && groupNameMatch[1]) {
+                        showGroupMembersInGroup(group_id, groupNameMatch[1]);
+                    } else {
+                        console.warn('Could not extract group name from modal title. Refreshing all groups.');
+                        fetchGroups();
+                    }
+                } else {
+                    fetchGroups(); // If modal wasn't open or group_id missing, refresh all groups
+                }
+
+            } catch (error) {
+                console.error('Error saving member:', error.message);
+                alert(`Error saving member: ${error.message}`);
+            }
+        });
+
+        /** Deletes a specific group member. */
+        async function deleteMember(id, name) {
+            if (!confirm(`Are you sure you want to delete the member "${name}"?`)) {
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('group_members')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                alert('Member deleted successfully!');
+                // Re-fetch members for the current group after deletion
+                if (currentGroupId && modalTitle.textContent) {
+                    const groupNameMatch = modalTitle.textContent.match(/Group Members in Group: (.+)/);
+                    if (groupNameMatch && groupNameMatch[1]) {
+                        showGroupMembersInGroup(currentGroupId, groupNameMatch[1]);
+                    } else {
+                        fetchGroups();
+                    }
+                } else {
+                    fetchGroups();
+                }
+
+            } catch (error) {
+                console.error('Error deleting member:', error.message);
+                alert(`Error deleting member: ${error.message}`);
+            }
+        }
+
+        // Initial fetch of groups when the page loads
+        document.addEventListener('DOMContentLoaded', fetchGroups);
+    </script>
+</body>
+</html>
